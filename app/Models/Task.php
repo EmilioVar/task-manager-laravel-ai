@@ -14,6 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 )]
 class Task extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'is_completed' => 'boolean'
+        ];
+    }
+
     public function User(): BelongsTo
     {
         return $this->belongsTo(User::class);

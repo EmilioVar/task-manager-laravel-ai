@@ -78,39 +78,39 @@ new class extends Component {
             ];
         });
 
-        foreach ($response as $event) {
-            if ($event instanceof StreamStart) {
-                $this->model = $event->model;
-                $this->provider = $event->provider;
-            }
-            if ($event instanceof TextStart) {
-
-                $this->stream(to: 'answer', content: '');
-            }
-            if ($event instanceof ToolCall) {
-                $this->messages[$lastIndex]['tools'][] = [
-                    'id' => $event->toolCall->id, // ← guardamos el id
-                    'name' => $event->toolCall->name,
-                    'status' => 'running',
-                ];
-
-                $this->stream(to: 'thinking', content: '⚙ ' . $event->toolCall->name . '...', replace: true);
-            }
-
-            if ($event instanceof ToolResult) {
-                foreach ($this->messages[$lastIndex]['tools'] as $i => $tool) {
-                    if ($tool['status'] === 'running') {
-                        $this->messages[$lastIndex]['tools'][$i]['status'] = 'done';
-                    }
+        try {
+            foreach ($response as $event) {
+                if ($event instanceof StreamStart) {
+                    $this->model = $event->model;
+                    $this->provider = $event->provider;
                 }
-
-                $this->stream(to: 'thinking', content: '', replace: true);
+                if ($event instanceof TextStart) {
+                    $this->stream(to: 'answer', content: '');
+                }
+                if ($event instanceof ToolCall) {
+                    $this->messages[$lastIndex]['tools'][] = [
+                        'id' => $event->toolCall->id,
+                        'name' => $event->toolCall->name,
+                        'status' => 'running',
+                    ];
+                    $this->stream(to: 'thinking', content: '⚙ ' . $event->toolCall->name . '...', replace: true);
+                }
+                if ($event instanceof ToolResult) {
+                    foreach ($this->messages[$lastIndex]['tools'] as $i => $tool) {
+                        if ($tool['status'] === 'running') {
+                            $this->messages[$lastIndex]['tools'][$i]['status'] = 'done';
+                        }
+                    }
+                    $this->stream(to: 'thinking', content: '', replace: true);
+                }
+                if ($event instanceof TextDelta) {
+                    $this->messages[$lastIndex]['content'] .= $event->delta;
+                    $this->stream(to: 'answer', content: $event->delta);
+                }
             }
-            if ($event instanceof TextDelta) {
-                $this->messages[$lastIndex]['content'] .= $event->delta;
-                
-                $this->stream(to: 'answer', content: $event->delta);
-            }
+        } catch (\Throwable $e) {
+            $this->messages[$lastIndex]['content'] = 'Error: ' . $e->getMessage();
+            $this->stream(to: 'answer', content: 'Error: ' . $e->getMessage());
         }
     }
 };

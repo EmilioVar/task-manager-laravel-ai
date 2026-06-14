@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use App\Ai\Tools\CreateTask;
 use App\Ai\Tools\DeleteTask;
+use App\Ai\Tools\GenerateCalendar;
 use App\Ai\Tools\ListTasks;
 use App\Ai\Tools\UpdateTask;
 use Illuminate\Support\Facades\Auth;
@@ -19,8 +20,9 @@ use Stringable;
 
 #[Provider([
     Lab::Gemini->value => 'gemini-3.1-flash-lite',
-    Lab::Groq->value => 'llama-3.3-70b-versatile',
-    Lab::OpenRouter->value => 'google/gemini-2.5-flash-lite',
+    //Lab::Groq->value => 'llama-3.3-70b-versatile',
+    Lab::Groq->value => 'llama-3.1-8b-instant'
+    //Lab::OpenRouter->value => 'google/gemini-2.5-flash-lite',
     //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
 class TaskAgent implements Agent, Conversational, HasTools
@@ -34,7 +36,8 @@ class TaskAgent implements Agent, Conversational, HasTools
     {
         return '
             Eres un asistente de gestión de tareas. 
-            Ayudas al usuario a crear, listar y actualizar sus tareas. 
+            Ayudas al usuario a crear, listar y actualizar sus tareas.
+            Además, tienes la capacidad de priorizar tareas o recomendar proximas tareas.
             Responde siempre en el idioma del usuario.
             La fecha de hoy es ' . now()->toDateString() . '.';
     }
@@ -53,7 +56,8 @@ class TaskAgent implements Agent, Conversational, HasTools
             new UpdateTask(Auth::user()),
             new DeleteTask(Auth::user()),
             // SUBAGENT
-            new PrioritizerAgent()
+            new PrioritizerAgent(Auth::user()),
+            new RecommendNextTaskAgent(Auth::user())
         ];
     }
 }

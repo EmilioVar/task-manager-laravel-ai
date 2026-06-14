@@ -11,7 +11,7 @@ use Stringable;
 class CreateTask implements Tool
 {
     public function __construct(
-        public User $user
+        private User $user
     ){}
     /**
      * Get the description of the tool's purpose.

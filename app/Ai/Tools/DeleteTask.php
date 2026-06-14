@@ -11,7 +11,7 @@ use Stringable;
 class DeleteTask implements Tool
 {
     public function __construct(
-        public User $user
+        private User $user
     ) {}
 
     public function description(): Stringable|string

@@ -11,7 +11,7 @@ use Stringable;
 class UpdateTask implements Tool
 {
     public function __construct(
-        public User $user
+        private User $user
     ){}
 
     /**

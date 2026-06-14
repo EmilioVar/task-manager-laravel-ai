@@ -4,7 +4,6 @@ namespace App\Ai\Tools;
 
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\Support\Facades\Auth;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -22,7 +21,7 @@ class ListTasks implements Tool
         return '
             Lista las tareas del usuario.
             Filtra por estado o fecha si el usuario lo indica.
-            El estado significa uqe una tarea esté completa o no, es decir, que en la base de datos aparezca 0 (incompleta) o 1 (completa).
+            El estado significa que una tarea esté completa o no, es decir, que en la base de datos aparezca 0 (incompleta) o 1 (completa).
         ';
     }
 

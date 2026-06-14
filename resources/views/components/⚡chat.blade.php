@@ -19,12 +19,7 @@ new class extends Component {
 
     public function user(): User
     {
-        return User::first();
-    }
-
-    public function conversations()
-    {
-        return $this->user()->conversations()->latest()->get();
+        return Auth::user();
     }
 
     public function selectConversation(string $id): void
@@ -37,6 +32,8 @@ new class extends Component {
                 fn($msg) => [
                     'role' => $msg->role,
                     'content' => $msg->content,
+                    'meta' => null,
+                    'tools' => [],
                 ],
             )
             ->toArray();
@@ -51,13 +48,11 @@ new class extends Component {
 
     public function submitPrompt(): void
     {
-        set_time_limit(0);
-
         $userMessage = $this->prompt;
         $this->prompt = '';
 
-        $this->messages[] = ['role' => 'user', 'content' => $userMessage];
-        $this->messages[] = ['role' => 'assistant', 'content' => ''];
+        $this->messages[] = ['role' => 'user', 'content' => $userMessage, 'meta' => null, 'tools' => []];
+        $this->messages[] = ['role' => 'assistant', 'content' => '', 'meta' => null, 'tools' => []];
         $lastIndex = array_key_last($this->messages);
 
         $user = $this->user();
@@ -69,8 +64,18 @@ new class extends Component {
             $response = $agent->continue($this->conversationId, as: $user)->stream($userMessage);
         }
 
-        $response->then(function (StreamedAgentResponse $response) {
+        $response->then(function (StreamedAgentResponse $response) use ($lastIndex) {
             $this->conversationId = $response->conversationId;
+
+            $this->messages[$lastIndex]['meta'] = [
+                'provider' => $response->meta->provider,
+                'model' => $response->meta->model,
+                'prompt_tokens' => $response->usage->promptTokens,
+                'completion_tokens' => $response->usage->completionTokens,
+                'cache_read' => $response->usage->cacheReadInputTokens,
+                'reasoning' => $response->usage->reasoningTokens,
+                'steps' => $response->steps->count(),
+            ];
         });
 
         foreach ($response as $event) {
@@ -79,16 +84,31 @@ new class extends Component {
                 $this->provider = $event->provider;
             }
             if ($event instanceof TextStart) {
+
                 $this->stream(to: 'answer', content: '');
             }
             if ($event instanceof ToolCall) {
-                $this->stream(to: 'thinking', content: 'Ejecutando acción...', replace: true);
+                $this->messages[$lastIndex]['tools'][] = [
+                    'id' => $event->toolCall->id, // ← guardamos el id
+                    'name' => $event->toolCall->name,
+                    'status' => 'running',
+                ];
+
+                $this->stream(to: 'thinking', content: '⚙ ' . $event->toolCall->name . '...', replace: true);
             }
+
             if ($event instanceof ToolResult) {
+                foreach ($this->messages[$lastIndex]['tools'] as $i => $tool) {
+                    if ($tool['status'] === 'running') {
+                        $this->messages[$lastIndex]['tools'][$i]['status'] = 'done';
+                    }
+                }
+
                 $this->stream(to: 'thinking', content: '', replace: true);
             }
             if ($event instanceof TextDelta) {
                 $this->messages[$lastIndex]['content'] .= $event->delta;
+                
                 $this->stream(to: 'answer', content: $event->delta);
             }
         }
@@ -136,7 +156,10 @@ new class extends Component {
     <main class="flex-1 flex flex-col min-w-0">
 
         {{-- Messages --}}
-        <div class="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6">
+        <div x-data x-init="const el = $el;
+        const observer = new MutationObserver(() => el.scrollTop = el.scrollHeight);
+        observer.observe(el, { childList: true, subtree: true, characterData: true });
+        el.scrollTop = el.scrollHeight;" class="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6">
 
             @if (empty($messages))
                 <div class="h-full flex flex-col items-center justify-center text-center text-gray-600">
@@ -160,28 +183,74 @@ new class extends Component {
                             class="w-7 h-7 rounded-full bg-indigo-900 flex items-center justify-center shrink-0 mt-0.5 text-indigo-400 text-xs">
                             AI
                         </div>
-                        <div class="flex flex-col gap-1 max-w-[75%]">
+                        <div class="flex flex-col gap-2 max-w-[75%]">
+
+                            {{-- Tools utilizadas --}}
+                            @if (!empty($message['tools']))
+                                <div class="flex flex-col gap-1">
+                                    @foreach ($message['tools'] as $tool)
+                                        <div
+                                            class="flex items-center gap-2 text-[11px] font-mono px-3 py-1.5 rounded-lg
+                                            {{ $tool['status'] === 'done'
+                                                ? 'bg-gray-900 border border-gray-800 text-gray-500'
+                                                : 'bg-amber-950 border border-amber-800 text-amber-400' }}">
+                                            @if ($tool['status'] === 'done')
+                                                <span class="text-green-500">✓</span>
+                                            @else
+                                                <span class="animate-pulse">⚙</span>
+                                            @endif
+                                            {{ $tool['name'] }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            {{-- Respuesta --}}
                             @if ($message['content'] !== '')
                                 <div @if ($loop->last) wire:stream="answer" @endif
                                     class="text-sm leading-relaxed text-gray-100 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-sm rounded-tr-[18px] rounded-br-[18px] rounded-bl-[18px] prose prose-invert prose-sm max-w-none">
                                     {!! \Illuminate\Support\Str::markdown($message['content']) !!}
                                 </div>
                             @endif
+
+                            {{-- Meta / tokens --}}
+                            @if (!empty($message['meta']))
+                                @php $m = $message['meta']; @endphp
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 px-1 text-[10px] text-gray-600 font-mono">
+                                    <span class="text-indigo-500/70">{{ $m['provider'] }} · {{ $m['model'] }}</span>
+                                    <span title="Prompt tokens">↑ {{ number_format($m['prompt_tokens']) }}</span>
+                                    <span title="Completion tokens">↓
+                                        {{ number_format($m['completion_tokens']) }}</span>
+                                    @if ($m['cache_read'] > 0)
+                                        <span class="text-green-700" title="Cache read tokens">♻
+                                            {{ number_format($m['cache_read']) }}</span>
+                                    @endif
+                                    @if ($m['reasoning'] > 0)
+                                        <span class="text-yellow-700" title="Reasoning tokens">🧠
+                                            {{ number_format($m['reasoning']) }}</span>
+                                    @endif
+                                    @if ($m['steps'] > 1)
+                                        <span class="text-gray-600">{{ $m['steps'] }} steps</span>
+                                    @endif
+                                </div>
+                            @endif
+
                         </div>
                     </div>
                 @endif
             @endforeach
 
-            {{-- Thinking --}}
+            {{-- Thinking indicator --}}
             <div wire:loading wire:target="submitPrompt" class="flex gap-3 items-start">
                 <div
                     class="w-7 h-7 rounded-full bg-indigo-900 flex items-center justify-center shrink-0 mt-0.5 text-indigo-400 text-xs">
                     AI
                 </div>
-                <div wire:stream="thinking" class="text-sm text-gray-500 px-4 py-2.5">
+                <div wire:stream="thinking" class="text-sm text-gray-500 px-4 py-2.5 animate-pulse">
                     pensando...
                 </div>
             </div>
+
         </div>
 
         {{-- Input --}}

@@ -20,7 +20,9 @@ class UpdateTask implements Tool
     public function description(): Stringable|string
     {
         return '
-            Actualiza una tarea existente del usuario. Permite cambiar el nombre, la fecha límite y/o el estado de completado.
+            Actualiza una tarea existente del usuario.
+            Permite cambiar el nombre, la fecha límite y/o el estado de completado.
+            IMPORTANTE: después de ejecutar cualquier acción, SIEMPRE responde al usuario confirmando lo que has hecho con un mensaje en español.
         ';
     }
 

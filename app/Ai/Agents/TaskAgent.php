@@ -18,10 +18,10 @@ use Laravel\Ai\Promptable;
 use Stringable;
 
 #[Provider([
-    Lab::Gemini->value => 'gemini-2.5-pro',
-    Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
-    Lab::Groq->value => 'llama-3.1-8b-instant',
-    //Lab::OpenRouter->value => 'openai/gpt-4o-mini',
+    Lab::Gemini->value => 'gemini-3.1-flash-lite',
+    Lab::OpenRouter->value => 'gemini-2.5-flash-lite',
+    Lab::Groq->value => 'llama-3.3-70b-versatile',
+    //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
 class TaskAgent implements Agent, Conversational, HasTools
 {
@@ -47,10 +47,13 @@ class TaskAgent implements Agent, Conversational, HasTools
     public function tools(): iterable
     {
         return [
+            // CRUD
             new CreateTask(Auth::user()),
             new ListTasks(Auth::user()),
             new UpdateTask(Auth::user()),
-            new DeleteTask(Auth::user())
+            new DeleteTask(Auth::user()),
+            // SUBAGENT
+            new PrioritizerAgent()
         ];
     }
 }

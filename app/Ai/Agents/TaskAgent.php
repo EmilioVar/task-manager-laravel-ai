@@ -19,8 +19,8 @@ use Stringable;
 
 #[Provider([
     Lab::Gemini->value => 'gemini-3.1-flash-lite',
-    Lab::OpenRouter->value => 'gemini-2.5-flash-lite',
     Lab::Groq->value => 'llama-3.3-70b-versatile',
+    Lab::OpenRouter->value => 'google/gemini-2.5-flash-lite',
     //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
 class TaskAgent implements Agent, Conversational, HasTools

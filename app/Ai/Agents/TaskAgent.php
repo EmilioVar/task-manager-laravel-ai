@@ -22,7 +22,7 @@ use Stringable;
     Lab::Gemini->value => 'gemini-3.1-flash-lite',
     Lab::Groq->value => 'llama-3.3-70b-versatile',
     //Lab::Groq->value => 'llama-3.1-8b-instant',
-    //Lab::OpenRouter->value => 'google/gemini-2.5-flash-lite',
+    //Lab::OpenRouter->value => 'google/gemini-2.5-flash',
     //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
 class TaskAgent implements Agent, Conversational, HasTools
@@ -39,6 +39,7 @@ class TaskAgent implements Agent, Conversational, HasTools
             Ayudas al usuario a crear, listar y actualizar sus tareas.
             Además, tienes la capacidad de priorizar tareas o recomendar proximas tareas.
             Responde siempre en el idioma del usuario.
+            Quiero que tengas respuestas agradables y cercanas, sé simpatico.
             La fecha de hoy es ' . now()->toDateString() . '.';
     }
 

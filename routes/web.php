@@ -14,7 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $question = (new TaskAgent)->prompt(
             'que tareas tengo?',
             provider: Lab::Groq,
-            model: 'llama-3.1-8b-instant'
+            model: 'llama-3.3-70b-versatile'
         );
     
         dd($question);

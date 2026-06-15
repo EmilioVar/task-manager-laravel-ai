@@ -4,9 +4,9 @@ namespace App\Ai\Agents;
 
 use App\Ai\Tools\CreateTask;
 use App\Ai\Tools\DeleteTask;
-use App\Ai\Tools\GenerateCalendar;
 use App\Ai\Tools\ListTasks;
 use App\Ai\Tools\UpdateTask;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Concerns\RemembersConversations;
@@ -20,8 +20,8 @@ use Stringable;
 
 #[Provider([
     Lab::Gemini->value => 'gemini-3.1-flash-lite',
-    //Lab::Groq->value => 'llama-3.3-70b-versatile',
-    Lab::Groq->value => 'llama-3.1-8b-instant'
+    Lab::Groq->value => 'llama-3.3-70b-versatile',
+    //Lab::Groq->value => 'llama-3.1-8b-instant',
     //Lab::OpenRouter->value => 'google/gemini-2.5-flash-lite',
     //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
@@ -58,6 +58,21 @@ class TaskAgent implements Agent, Conversational, HasTools
             // SUBAGENT
             new PrioritizerAgent(Auth::user()),
             new RecommendNextTaskAgent(Auth::user())
+        ];
+    }
+
+    public function schema(JsonSchema $schema): array
+    {
+        return [
+            'list_items' => $schema->array()->nullable()
+            /* 'list_items' => $schema->array()
+            ->items(
+                $schema->object(fn ($schema) => [
+                    'name' => $schema->string()->required(),
+                    'due_Date' => $schema->string()->required(),
+                ])
+            )
+            ->required(), */
         ];
     }
 }

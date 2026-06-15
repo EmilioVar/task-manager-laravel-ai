@@ -22,6 +22,7 @@ class CreateTask implements Tool
             Crea una nueva tarea para el usuario autenticado.
             Usa esta tool cuando el usuario quiera añadir, crear o apuntar una tarea.
             El nombre es el campo name, y siempre será obligatorio.
+            Si el usuario no te da un nombre de tarea específico debes de solicitarlo, nunca te inventes el nombre.
             Pueden seleccionar una fecha de expiración con due_date, pero es opcional.
         ';
     }
@@ -33,6 +34,12 @@ class CreateTask implements Tool
     {
         $name = $request['name'];
         $dueDate = $request['due_date'] ?? null;
+
+        $name = trim((string) ($request['name'] ?? ''));
+
+        if ($name === '') {
+            return 'ERROR: Debes solicitar al usuario el nombre de la tarea antes de crearla.';
+        }
 
         $create =  $this->user
             ->tasks()

@@ -28,9 +28,8 @@ class PrioritizerAgent implements Agent, CanActAsTool, HasTools
     public function description(): string
     {
         return '
-            Eres un experto en productividad. 
-            PRIMERO llama a ListTasks para obtener las tareas del usuario.
-            DESPUÉS analiza y devuelve un orden de prioridad justificado por urgencia y fecha límite.
+            Prioriza las tareas del usuario por urgencia y fecha límite.
+            Úsame cuando el usuario quiera saber qué tarea debería hacer primero.
         ';
     }
 
@@ -39,9 +38,9 @@ class PrioritizerAgent implements Agent, CanActAsTool, HasTools
      */
     public function instructions(): Stringable|string
     {
-        return 'Eres un experto en productividad. Analiza la lista de tareas 
-                y devuelve un orden de prioridad justificado, teniendo en cuenta 
-                fechas límite y urgencia.';
+        return 'Eres un experto en productividad. 
+                PRIMERO llama a ListTasks para obtener las tareas del usuario.
+                DESPUÉS analiza y devuelve un orden de prioridad justificado por urgencia y fecha límite.';
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Ai\Agents;
 use App\Ai\Tools\CreateTask;
 use App\Ai\Tools\DeleteTask;
 use App\Ai\Tools\ListTasks;
+use App\Ai\Tools\SendEmail;
 use App\Ai\Tools\UpdateTask;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Facades\Auth;
@@ -20,9 +21,9 @@ use Stringable;
 
 #[Provider([
     Lab::Gemini->value => 'gemini-3.1-flash-lite',
-    Lab::Groq->value => 'llama-3.3-70b-versatile',
+    //Lab::Groq->value => 'llama-3.3-70b-versatile',
     //Lab::Groq->value => 'llama-3.1-8b-instant',
-    //Lab::OpenRouter->value => 'google/gemini-2.5-flash',
+    Lab::OpenRouter->value => 'google/gemini-2.5-flash',
     //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
 class TaskAgent implements Agent, Conversational, HasTools
@@ -58,7 +59,9 @@ class TaskAgent implements Agent, Conversational, HasTools
             new DeleteTask(Auth::user()),
             // SUBAGENT
             new PrioritizerAgent(Auth::user()),
-            new RecommendNextTaskAgent(Auth::user())
+            new RecommendNextTaskAgent(Auth::user()),
+            // EXTRA
+            new SendEmail(Auth::user())
         ];
     }
 

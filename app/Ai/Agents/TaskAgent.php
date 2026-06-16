@@ -23,6 +23,7 @@ use Stringable;
     Lab::Gemini->value => 'gemini-3.1-flash-lite',
     //Lab::Groq->value => 'llama-3.3-70b-versatile',
     //Lab::Groq->value => 'llama-3.1-8b-instant',
+    //Lab::OpenRouter->value => 'google/gemini-2.5-flash-lite',
     Lab::OpenRouter->value => 'google/gemini-2.5-flash',
     //Lab::OpenRouter->value => 'google/gemma-4-31b-it:free',
 ])]
